@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+go get gophereclus/cmd
+echo "Refreshed dependencies... Building Now"
+go build
+echo "Build Complete"
