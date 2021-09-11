@@ -30,21 +30,22 @@ var crawlCmd = &cobra.Command{
 	Use:   "crawl <hostname>",
 	Example: `crawl -d 4 google.com`,
 	Short: "crawl a webpage",
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("crawl called")
+		fmt.Println(color.CyanString("[i] ")+ "beginning crawl...")
 		c := colly.NewCollector(
 			colly.AllowedDomains("www."+args[0], args[0]),
 		)
 		c.OnRequest(func(r *colly.Request) {
-    		fmt.Println(color.CyanString("[i] ")+"visiting: "+r.URL.String())
+    		fmt.Println(color.GreenString("[+] ")+"found: "+r.URL.String())
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
 			nextPage := e.Request.AbsoluteURL(e.Attr("href"))
 			time.Sleep(time.Duration(cinterval)*time.Second)
    			c.Visit(nextPage)
 		})
-		c.AllowURLRevisit = false
-		c.Visit("http://" + args[0])
+		c.IgnoreRobotsTxt = ignoreRobots
+		c.Visit("https://" + args[0])
 		fmt.Println("Done")
 	},
 }
@@ -52,7 +53,7 @@ var crawlCmd = &cobra.Command{
 func init() {
 	crawlCmd.Flags().IntVarP(&depth, "depth", "d", 4, "recursion depth")
 	crawlCmd.Flags().IntVarP(&cinterval, "interval", "i", 7, "wait time between page visits (in seconds)")
-	crawlCmd.Flags().BoolVarP(&ignoreRobots, "robotstxt", "r", false, "Listen to the ")
+	crawlCmd.Flags().BoolVarP(&ignoreRobots, "robotstxt", "r", false, "ignore robots.txt (makes you an obvious attacker)")
 	// crawlCmd.Flags().StringVarP(&depth, "interval", "i", 7, "wait time between page visits")
 	rootCmd.AddCommand(crawlCmd)
 
