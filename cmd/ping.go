@@ -52,6 +52,10 @@ func pingFunc(cmd *cobra.Command, args []string) error {
 		fmt.Println("pinging", args[0], "with", count, "packets")
 		err = p.Run()
 
+		if err != nil && strings.Contains(err.Error(), "socket: permission denied") {
+			p.SetPrivileged(true)
+			err = p.Run()
+		}
 		if err != nil && strings.Contains(err.Error(), "socket: operation not permitted") {
 			return errors.New(color.RedString("i don't have permission to send pings, try running me as sudo or running:\n\nsudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\""))
 		}
