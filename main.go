@@ -15,8 +15,8 @@ limitations under the License.
 */
 package main
 
-import "gophereclus/cmd"
+import "vertigo/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }

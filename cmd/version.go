@@ -24,14 +24,14 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Check your gophereclus version.",
-	Long: `The current version of your gophereclus installation.`,
+	Short: "check your vertigo version.",
+	Long:  `the current version of your vertigo installation.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(`gophereclus v0.1.0
+		fmt.Println(`vertigo v0.1.0
 		
-Copyright © 2021 terabyte3, T33R3x terabyte@terabyteis.me
+copyright © 2021 terabyte3, T33R3x terabyte@terabyteis.me
 
-Licensed under the Apache License, Version 2.0`)
+licensed under the apache license, version 2.0`)
 	},
 }
 

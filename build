@@ -1,5 +1,3 @@
 #!/usr/bin/bash
-go get gophereclus/cmd
-echo "Refreshed dependencies... Building Now"
-go build
+go get vertigo
 echo "Build Complete"

@@ -1,4 +1,4 @@
-module gophereclus
+module vertigo
 
 go 1.17
 

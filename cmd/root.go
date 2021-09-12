@@ -16,28 +16,30 @@ limitations under the License.
 package cmd
 
 import (
-  "fmt"
-  "os"
-  "github.com/spf13/cobra"
-  "github.com/fatih/color"
+	"fmt"
+	"os"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
+var verbose bool
 var rootCmd = &cobra.Command{
-  Use:   "gophereclus",
-  Short: color.CyanString(`
-                          __                        __          
-       ____ _____  ____  / /_  ___  ________  _____/ /_  _______
-      / __` + " `/ __ \\/ __ \\/ __ \\/ _ \\/ ___/ _ \\/ ___/ / / / / ___/" + `
-     / /_/ / /_/ / /_/ / / / /  __/ /  /  __/ /__/ / /_/ /__  ) 
-     \__, /\____/ .___/_/ /_/\___/_/   \___/\___/_/\____/____/  
-    /____/     /_/                                              
-    `) + "\n\ngophereclus is is a CLI application for retrieving information about computers.", // http://patorjk.com/software/taag/#p=display&f=Slant&t=gophereclus
+	Use: "vertigo",
+	Short: color.CyanString(`
+    	          __  _           
+ _   _____  _____/ /_(_)___ _____ 
+| | / / _ \/ ___/ __/ / __ '/ __ \
+| |/ /  __/ /  / /_/ / /_/ / /_/ /
+|___/\___/_/   \__/_/\__, /\____/ 
+		    /____/
+	`) + "\n\nvertigo is is a CLI application for retrieving information about computers.", // http://patorjk.com/software/taag/#p=display&f=Slant&t=vertigo
 
 }
 
 func Execute() {
-  if err := rootCmd.Execute(); err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-  }
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "", "v", false, "enable verbosity (-v)")
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
