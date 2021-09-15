@@ -25,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 	"time"
 )
-var verbose bool
 
 func lookup(ipaddr string) {
 	p, _ := ping.NewPinger(ipaddr)
@@ -99,7 +98,6 @@ var sweepCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sweepCmd)
-	sweepCmd.Flags().BoolVarP(&verbose, "", "v", false, "verbose (-v, or -vv)")
 
 	// Here you will define your flags and configuration settings.
 
