@@ -16,8 +16,14 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -37,9 +43,55 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "", "v", false, "enable verbosity (-v)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbosity (-v)")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+// helper functions
+func pingPort(hostname string, port int, timeout int) (bool, error) {
+	addr := hostname + ":" + strconv.Itoa(port)
+	conn, err := net.DialTimeout("tcp", addr, time.Duration(timeout)*time.Millisecond)
+
+	if err != nil {
+		return false, err
+	}
+
+	defer conn.Close()
+	return true, nil
+}
+
+func parsePorts(ports string) ([]int, error) {
+	var portList []int
+
+	if strings.Contains(ports, ",") {
+		pports := strings.Split(ports, ",") // parsed ports
+
+		for _, port := range pports {
+			p, err := strconv.Atoi(port)
+
+			if err != nil {
+				return nil, err
+
+			}
+			portList = append(portList, p)
+		}
+	} else if strings.Contains(ports, "-") {
+		pports := strings.Split(ports, "-") // parsed ports
+		if len(pports) != 2 {
+			return nil, errors.New("invalid port range")
+		}
+		plow, _ := strconv.Atoi(pports[0])
+		phigh, _ := strconv.Atoi(pports[1])
+
+		for i := plow; i <= phigh; i++ {
+			portList = append(portList, i)
+		}
+	} else {
+		p, _ := strconv.Atoi(ports)
+		portList = append(portList, p)
+	}
+	return portList, nil
 }
