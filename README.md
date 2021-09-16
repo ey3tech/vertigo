@@ -23,7 +23,7 @@
   <p align="center">
     a speedy hacking cli written in go
     <br />
-    <a href="https://github.com/ey3tech/vertigo"><strong>explore the docs »</strong></a>
+    <a href="docs/vertigo.md"><strong>explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/ey3tech/vertigo">view demo</a>
