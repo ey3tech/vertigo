@@ -19,6 +19,7 @@ import (
 	"errors"
 	"github.com/go-ping/ping"
 	"fmt"
+	"strconv"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -49,6 +50,20 @@ var qs = []*survey.Question{
             Default: "ssh",
         },
     },
+	{
+        Name: "port",
+        Prompt: &survey.Input{
+            Message: "what port should I use for the attack?",
+        },
+		Validate: func(ans interface{}) error {
+			_, err := strconv.Atoi(ans.(string))
+			return err
+		},
+		Transform: func(ans interface{}) (newAns interface{}) {
+			p, _ := strconv.Atoi(ans.(string))
+			return p
+		},
+    },
     {
         Name: "confirm",
         Prompt: &survey.Select{
@@ -66,14 +81,15 @@ var bruteCmd = &cobra.Command{
 			Hostname string
 			Service string
 			Confirm int
+			Port int
 		}{}
-		if answers.Confirm == 0 { // index of the options list above
-			fmt.Println(color.CyanString("[i] ") + "canceled")
-			return nil
-		}
 		err := survey.Ask(qs, &answers)
 		if err != nil {
 			return errors.New(color.RedString(err.Error()))
+		}
+		if answers.Confirm == 0 { // index of the options list above
+			fmt.Println(color.CyanString("[i] ") + "canceled")
+			return nil
 		}
 		return nil
 	},
