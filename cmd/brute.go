@@ -18,10 +18,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/go-ping/ping"
+	"io/fs"
+	"io/ioutil"
+	"os"
 	"strconv"
+	"strings"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
+	"github.com/go-ping/ping"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +36,8 @@ type response struct {
 	Service  string
 	Confirm  int
 	Port     int
+	Username string
+	ListPath string
 }
 
 var answers = response{}
@@ -91,6 +98,63 @@ var bruteCmd = &cobra.Command{
 				Transform: func(ans interface{}) (newAns interface{}) {
 					p, _ := strconv.Atoi(ans.(string))
 					return p
+				},
+			},
+			{
+				Name: "username",
+				Prompt: &survey.Input{
+					Message: "what username are we cracking?",
+				},
+			},
+			{
+				Name: "listpath",
+				Prompt: &survey.Input{
+					Message: "where's the password list located?",
+					Suggest: func(toComplete string) []string {
+						var dir []fs.FileInfo
+						var err error
+						var path []string
+						if toComplete == "" {
+							dir, err = ioutil.ReadDir(".")
+						} else {
+							dir, err = ioutil.ReadDir(strings.Split(toComplete, "/")[0])
+							dirstr := strings.Split(toComplete, "/")[0]
+							path = strings.Split(toComplete, "/")
+							fmt.Println(dirstr)
+						}
+						// fmt.Println(fmt.Sprint(len(dir)))
+						if err != nil {
+							return nil
+						}
+						var suggestions []string
+						for _, item := range dir {
+							if toComplete == "" {
+								if item.IsDir() {
+									suggestions = append(suggestions, item.Name() + "/")
+								} else {
+									suggestions = append(suggestions, item.Name())
+								}
+							} else if strings.Contains(item.Name(), path[1]) {
+								if item.IsDir() {
+									suggestions = append(suggestions, item.Name() + "/")
+								} else {
+									suggestions = append(suggestions, item.Name())
+								}
+							}
+						}
+						return suggestions
+					},
+				},
+				Validate: func(ans interface{}) error {
+					str := ans.(string)
+					if !fs.ValidPath(str) {
+						return errors.New(color.RedString("invalid filepath!"))
+					}
+					file, err := os.Stat(str)
+					if file == nil || file.IsDir() {
+						return errors.New(color.RedString("invalid filepath!"))
+					}
+					return err
 				},
 			},
 			{
