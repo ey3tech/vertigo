@@ -30,48 +30,48 @@ var interval int
 var timeout int
 
 func pingFunc(cmd *cobra.Command, args []string) error {
-		p, _ := ping.NewPinger(args[0])
-		err := p.Resolve()
-		p.Interval = time.Duration(interval) * time.Millisecond
-		p.Timeout = time.Duration(timeout) * time.Millisecond
-		if err != nil && strings.Contains(err.Error(), "connect: no route to host") {
-			return errors.New(color.RedString("couldn't find a route to the host"))
-		}
-		if err != nil && strings.Contains(err.Error(), "no such host") {
-			return errors.New(color.RedString("i couldn't find that host at all, make sure there aren't any typos"))
-		}
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("resolved host")
-		p.Count = count
-		p.OnRecv = func(pkt *ping.Packet) {
-			color.Green("[✓] recieved " + fmt.Sprint(pkt.Nbytes) + " bytes from " + string(pkt.Addr) + ": icmp_seq=" + fmt.Sprint(pkt.Seq) + " rtt=" + fmt.Sprint(pkt.Rtt))
-		}
-		p.SetPrivileged(false)
-		fmt.Println("pinging", args[0], "with", count, "packets")
-		err = p.Run()
-
-		if err != nil && strings.Contains(err.Error(), "socket: permission denied") {
-			p.SetPrivileged(true)
-			err = p.Run()
-		}
-		if err != nil && strings.Contains(err.Error(), "socket: operation not permitted") {
-			return errors.New(color.RedString("i don't have permission to send pings, try running me as sudo or running:\n\nsudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\""))
-		}
-		if err != nil {
-			return errors.New(color.RedString(err.Error()))
-		}
-		if p.Statistics().PacketsRecv == 0 {
-			return errors.New(color.RedString("request timed out"))
-		}
-		
-		fmt.Println("-----------------------------------------------------------")
-		color.Cyan("average latency: " + fmt.Sprint(p.Statistics().AvgRtt.Milliseconds()) + "ms")
-		color.Cyan("min latency: " + fmt.Sprint(p.Statistics().MinRtt.Milliseconds()) + "ms")
-		color.Cyan("max latency: " + fmt.Sprint(p.Statistics().MaxRtt.Milliseconds()) + "ms")
-		return nil
+	p, _ := ping.NewPinger(args[0])
+	err := p.Resolve()
+	p.Interval = time.Duration(interval) * time.Millisecond
+	p.Timeout = time.Duration(timeout) * time.Millisecond
+	if err != nil && strings.Contains(err.Error(), "connect: no route to host") {
+		return errors.New(color.RedString("couldn't find a route to the host"))
 	}
+	if err != nil && strings.Contains(err.Error(), "no such host") {
+		return errors.New(color.RedString("i couldn't find that host at all, make sure there aren't any typos"))
+	}
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("resolved host")
+	p.Count = count
+	p.OnRecv = func(pkt *ping.Packet) {
+		color.Green("[✓] recieved " + fmt.Sprint(pkt.Nbytes) + " bytes from " + string(pkt.Addr) + ": icmp_seq=" + fmt.Sprint(pkt.Seq) + " rtt=" + fmt.Sprint(pkt.Rtt))
+	}
+	p.SetPrivileged(false)
+	fmt.Println("pinging", args[0], "with", count, "packets")
+	err = p.Run()
+
+	if err != nil && strings.Contains(err.Error(), "socket: permission denied") {
+		p.SetPrivileged(true)
+		err = p.Run()
+	}
+	if err != nil && strings.Contains(err.Error(), "socket: operation not permitted") {
+		return errors.New(color.RedString("i don't have permission to send pings, try running me as sudo or running:\n\nsudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\""))
+	}
+	if err != nil {
+		return errors.New(color.RedString(err.Error()))
+	}
+	if p.Statistics().PacketsRecv == 0 {
+		return errors.New(color.RedString("request timed out"))
+	}
+
+	fmt.Println("-----------------------------------------------------------")
+	color.Cyan("average latency: " + fmt.Sprint(p.Statistics().AvgRtt.Milliseconds()) + "ms")
+	color.Cyan("min latency: " + fmt.Sprint(p.Statistics().MinRtt.Milliseconds()) + "ms")
+	color.Cyan("max latency: " + fmt.Sprint(p.Statistics().MaxRtt.Milliseconds()) + "ms")
+	return nil
+}
 
 var pingCmd = &cobra.Command{
 	Use:   "ping <hostname> [count]",
