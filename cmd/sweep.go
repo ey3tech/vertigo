@@ -19,10 +19,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"net"
 	"github.com/fatih/color"
 	"github.com/go-ping/ping"
 	"github.com/spf13/cobra"
+	"net"
 	"time"
 )
 
@@ -31,12 +31,12 @@ func lookup(ipaddr string) {
 	p.Count = 1
 	p.Timeout = time.Duration(1 * time.Second)
 	err := p.Run()
-	if (err != nil) {
+	if err != nil {
 		if verbose {
 			fmt.Println(color.RedString("[-] ") + ipaddr + " is unreachable")
 		}
 	} else {
-		fmt.Println(color.CyanString("[+] ") +ipaddr+" is running")
+		fmt.Println(color.CyanString("[+] ") + ipaddr + " is running")
 	}
 }
 
@@ -53,7 +53,7 @@ var sweepCmd = &cobra.Command{
 		if err != nil {
 			return errors.New(color.RedString("invalid ip range"))
 		}
-		if ip.To4() == nil{
+		if ip.To4() == nil {
 			return errors.New(color.RedString("invalid ip range"))
 		}
 		// p, err := ping.NewPinger(fmt.Sprint(ip))
@@ -71,10 +71,10 @@ var sweepCmd = &cobra.Command{
 		ip := make(net.IP, 4)
 		binary.BigEndian.PutUint32(ip, start)
 		p, err := ping.NewPinger(fmt.Sprint(ip))
-		p.Timeout = time.Duration(500)*time.Millisecond
+		p.Timeout = time.Duration(500) * time.Millisecond
 		p.Count = 1
 		p.OnRecv = func(pkt *ping.Packet) {
-			fmt.Println(color.CyanString("[i]") + pkt.Addr, " is alive")
+			fmt.Println(color.CyanString("[i]")+pkt.Addr, " is alive")
 		}
 		if err != nil {
 			return errors.New(color.RedString(err.Error()))

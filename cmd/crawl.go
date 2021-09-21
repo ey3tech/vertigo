@@ -79,7 +79,9 @@ var crawlCmd = &cobra.Command{
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
-			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {r.Abort()}
+			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
+				r.Abort()
+			}
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
 			if proxies != nil {
