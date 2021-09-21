@@ -97,7 +97,7 @@ This is an example of how to list things you need to use the software and how to
 <!-- USAGE EXAMPLES -->
 ## usage
 
-![generated screenshot](https://user-images.githubusercontent.com/73202594/134030015-d4ca624c-c85e-475c-8d13-10bcaed490ee.png)
+<center><img src="https://user-images.githubusercontent.com/73202594/134030015-d4ca624c-c85e-475c-8d13-10bcaed490ee.png" width=700px></center>
 
 _For more examples, [read da docs](docs/vertigo.md)_
 
