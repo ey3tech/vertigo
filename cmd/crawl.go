@@ -16,13 +16,20 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
+	"os/signal"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/gocolly/colly"
 	"github.com/spf13/cobra"
@@ -34,6 +41,22 @@ var ctimeout int
 var camount int
 var ignoreRobots bool
 var proxylist string
+var signal_chan chan os.Signal
+var cstopped bool
+
+type XMLwebpage struct {
+	URL string `xml:"url"`
+	From string `xml:"from"`
+}
+
+type JSONwebpage struct {
+	URL string
+	From string
+}
+
+type JSONresults struct {
+	webpages []JSONwebpage
+}
 
 // crawlCmd represents the crawl command
 var crawlCmd = &cobra.Command{
@@ -44,7 +67,10 @@ var crawlCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println(color.CyanString("[i] ") + "preparing...")
 
+		cstopped = false
+
 		var proxies []string
+		var results []map[string]string
 
 		if proxylist != "" {
 
@@ -67,19 +93,24 @@ var crawlCmd = &cobra.Command{
 			}
 			proxies = strings.Split(string(proxystr), "\n") // a list of proxies
 		}
+
+		// create a new collector
 		c := colly.NewCollector(
 			colly.AllowedDomains("www."+args[0], args[0]),
 		)
-		if camount > 1 {
-			c.Limit(&colly.LimitRule{
-				Parallelism: camount,
-			})
-			//c.Async = true
-		}
+		c.Limit(&colly.LimitRule{
+			DomainRegexp: ".*",
+			Parallelism: camount,
+			// Delay: time.Duration(cinterval) * time.Second,
+		})
+		// c.Async = true
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
-			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {r.Abort()}
+			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
+				r.Abort()
+			}
+			time.Sleep(time.Duration(cinterval) * time.Second)
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
 			if proxies != nil {
@@ -89,14 +120,67 @@ var crawlCmd = &cobra.Command{
 			} else {
 				fmt.Println(color.GreenString("[+] ") + "found: " + e.Request.URL.String())
 			}
-			time.Sleep(time.Duration(cinterval) * time.Second)
 			nextPage := e.Request.AbsoluteURL(e.Attr("href"))
-			c.Visit(nextPage)
+			if !strings.HasSuffix(nextPage, "#") {
+				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
+			}
+			
+			if !cstopped {
+				c.Visit(nextPage)
+			}
 		})
 		fmt.Println(color.CyanString("[i] ") + "beginning crawl...")
 		c.AllowURLRevisit = false
+		signal_chan = make(chan os.Signal)
+		signal.Notify(signal_chan, os.Interrupt, syscall.SIGTERM)
 		c.Visit("https://" + args[0] + "/")
-		// c.Wait()
+		go func() {
+			<-signal_chan
+			cstopped = true
+		}()
+		
+		defer func() {
+			var exportq = &survey.Confirm{
+				Message: "export data?",
+			}
+			var exportfq = &survey.Input{
+				Message: "export file location?",
+				Suggest: func(toComplete string) []string {
+					files, _ := filepath.Glob(toComplete + "*.json")
+					return files
+				},
+			}
+			export := false
+			exportf := ""
+			format := ""
+			
+			survey.AskOne(exportq, &export)
+			if export {
+				eformat := &survey.Select{
+					Message: "export format to use",
+					Options: []string{"xml", "json"},
+				}
+				survey.AskOne(eformat, &format)
+				survey.AskOne(exportfq, &exportf)
+				if format == "xml" {
+					res := []XMLwebpage{}
+					for _, r := range results {
+						res = append(res, XMLwebpage{URL: r["url"], From: r["from"]})
+					}
+					file, _ := xml.MarshalIndent(&res, "", "  ")
+					ioutil.WriteFile(exportf, file, 0644)
+				} else if format == "json" {
+					res := JSONresults{}
+					for _, r := range results {
+						res.webpages = append(res.webpages, JSONwebpage{URL: r["url"], From: r["from"]})
+					}
+					file, _ := json.MarshalIndent(&res.webpages, "", "  ")
+					ioutil.WriteFile(exportf, file, 0644)
+				}
+				fmt.Println(color.CyanString("[i] ") + "export complete")
+			}
+			fmt.Println(color.CyanString("[i] ") + "crawl complete")
+			}()
 		return nil
 	},
 }
