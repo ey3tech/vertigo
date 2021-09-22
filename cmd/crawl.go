@@ -51,8 +51,8 @@ type XMLwebpage struct {
 }
 
 type JSONwebpage struct {
-	URL string
-	From string
+	URL string `json:"url"`
+	From string `json:"from"`
 }
 
 type JSONresults struct {
@@ -114,7 +114,6 @@ var crawlCmd = &cobra.Command{
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
-			fmt.Println("collecting "+ r.URL.String())
 			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
 				r.Abort()
 			}
@@ -132,10 +131,9 @@ var crawlCmd = &cobra.Command{
 				fmt.Println(color.GreenString("[+] ") + "found: " + e.Request.URL.String())
 			}
 			nextPage := e.Request.AbsoluteURL(e.Attr("href"))
-			if !strings.HasSuffix(nextPage, "#") {
+			if strings.HasSuffix(nextPage, "#") != true {
 				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
 			}
-			fmt.Println(cstopped)
 			if cstopped == false {
 				c.Visit(nextPage) 
 			} else {
@@ -153,7 +151,7 @@ var crawlCmd = &cobra.Command{
 		}()
 		c.Visit("https://" + args[0] + "/")
 		
-		func() {
+		err := func() error {
 			var exportq = &survey.Confirm{
 				Message: "export data?",
 			}
@@ -186,16 +184,21 @@ var crawlCmd = &cobra.Command{
 				} else if format == "json" {
 					res := JSONresults{}
 					for _, r := range results {
+						fmt.Println(string(r["url"]))
 						res.webpages = append(res.webpages, JSONwebpage{URL: r["url"], From: r["from"]})
 					}
-					file, _ := json.MarshalIndent(&res.webpages, "", "  ")
+					file, err := json.MarshalIndent(&results, "", "  ")
+					if err != nil {
+						return errors.New(err.Error())
+					}
 					ioutil.WriteFile(exportf, file, 0644)
 				}
 				fmt.Println(color.CyanString("[i] ") + "export complete")
 			}
 			fmt.Println(color.CyanString("[i] ") + "crawl complete")
+			return nil
 			}()
-		return nil
+		return err
 	},
 }
 
