@@ -43,6 +43,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	rootCmd.DisableAutoGenTag = true
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbosity (-v)")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

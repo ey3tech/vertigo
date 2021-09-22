@@ -43,27 +43,18 @@ var ignoreRobots bool
 var proxylist string
 var signal_chan chan os.Signal
 var cstopped bool
-var spiderm bool
+var domainfind bool
 
 type XMLwebpage struct {
 	URL string `xml:"url"`
 	From string `xml:"from"`
 }
 
-type JSONwebpage struct {
-	URL string `json:"url"`
-	From string `json:"from"`
-}
-
-type JSONresults struct {
-	webpages []JSONwebpage
-}
-
 // crawlCmd represents the crawl command
 
 var crawlCmd = &cobra.Command{
 	Use:     "crawl <hostname>",
-	Example: `crawl -d 4 google.com`,
+	Example: `vertigo crawl google.com`,
 	Short:   "crawl a webpage",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,6 +64,7 @@ var crawlCmd = &cobra.Command{
 
 		var proxies []string
 		var results []map[string]string
+
 
 		if proxylist != "" {
 
@@ -95,29 +87,19 @@ var crawlCmd = &cobra.Command{
 			}
 			proxies = strings.Split(string(proxystr), "\n") // a list of proxies
 		}
-
-		// create a new collector
-		var c *colly.Collector
-		if spiderm == false {
-			c = colly.NewCollector(
-				colly.AllowedDomains("www."+args[0], args[0]),
-			)
-		} else {
-			c = colly.NewCollector()
+		var path string
+		url := strings.SplitN(args[0], "/", 1)
+		hname := url[0]
+		if len(url) == 2 {
+			path = url[1]
 		}
-		c.Limit(&colly.LimitRule{
-			DomainRegexp: ".*",
-			Parallelism: camount,
-			// Delay: time.Duration(cinterval) * time.Second,
-		})
-		//c.Async = true
+		c := colly.NewCollector()
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
 			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
 				r.Abort()
 			}
-			time.Sleep(time.Duration(cinterval) * time.Second)
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
 			if cstopped == true {
@@ -134,6 +116,7 @@ var crawlCmd = &cobra.Command{
 			if strings.HasSuffix(nextPage, "#") != true {
 				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
 			}
+			time.Sleep(time.Duration(cinterval) * time.Second)
 			if cstopped == false {
 				c.Visit(nextPage) 
 			} else {
@@ -141,17 +124,26 @@ var crawlCmd = &cobra.Command{
 			}
 		})
 		fmt.Println(color.CyanString("[i] ") + "beginning crawl...")
+
 		c.AllowURLRevisit = false
+		if domainfind == true {
+			c.OnResponse(func(r *colly.Response) {
+				c.DisallowedDomains = append(c.DisallowedDomains, r.Request.URL.Hostname())
+				return
+			})
+		}
 		signal_chan = make(chan os.Signal)
 		signal.Notify(signal_chan, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			<-signal_chan
 			cstopped = true
-			fmt.Println("eeeee")
 		}()
-		c.Visit("https://" + args[0] + "/")
+		err := c.Visit("http://" + hname + "/" + path)
+		if err != nil {
+			return err
+		}
 		
-		err := func() error {
+		err = func() error {
 			var exportq = &survey.Confirm{
 				Message: "export data?",
 			}
@@ -182,11 +174,6 @@ var crawlCmd = &cobra.Command{
 					file, _ := xml.MarshalIndent(&res, "", "  ")
 					ioutil.WriteFile(exportf, file, 0644)
 				} else if format == "json" {
-					res := JSONresults{}
-					for _, r := range results {
-						fmt.Println(string(r["url"]))
-						res.webpages = append(res.webpages, JSONwebpage{URL: r["url"], From: r["from"]})
-					}
 					file, err := json.MarshalIndent(&results, "", "  ")
 					if err != nil {
 						return errors.New(err.Error())
@@ -209,7 +196,7 @@ func init() {
 	crawlCmd.Flags().IntVarP(&camount, "crawlers", "c", 1, "amount of crawlers (unrecommended without proxies, defaults to 1)")
 	crawlCmd.Flags().BoolVarP(&ignoreRobots, "robotstxt", "r", false, "ignore robots.txt (makes you an obvious attacker, defaults to false)")
 	crawlCmd.Flags().StringVarP(&proxylist, "proxylist", "p", "", "list of proxies to use")
-	crawlCmd.Flags().BoolVarP(&spiderm, "spider", "s", false, "allow the crawler to follow off-site links")
+	crawlCmd.Flags().BoolVarP(&domainfind, "domain", "s", false, "makes the crawler prioritize finding all different domains, hugely boosts performance")
 	rootCmd.AddCommand(crawlCmd)
 
 	// Here you will define your flags and configuration settings.

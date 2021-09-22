@@ -1,15 +1,15 @@
-## vertigo sweep
+## vertigo brute
 
-ping all ip addresses in the given ip range
+crack a password
 
 ```
-vertigo sweep <iprange> [flags]
+vertigo brute [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for sweep
+  -h, --help   help for brute
 ```
 
 ### Options inherited from parent commands
