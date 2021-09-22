@@ -43,6 +43,7 @@ var ignoreRobots bool
 var proxylist string
 var signal_chan chan os.Signal
 var cstopped bool
+var spiderm bool
 
 type XMLwebpage struct {
 	URL string `xml:"url"`
@@ -59,6 +60,7 @@ type JSONresults struct {
 }
 
 // crawlCmd represents the crawl command
+
 var crawlCmd = &cobra.Command{
 	Use:     "crawl <hostname>",
 	Example: `crawl -d 4 google.com`,
@@ -95,24 +97,33 @@ var crawlCmd = &cobra.Command{
 		}
 
 		// create a new collector
-		c := colly.NewCollector(
-			colly.AllowedDomains("www."+args[0], args[0]),
-		)
+		var c *colly.Collector
+		if spiderm == false {
+			c = colly.NewCollector(
+				colly.AllowedDomains("www."+args[0], args[0]),
+			)
+		} else {
+			c = colly.NewCollector()
+		}
 		c.Limit(&colly.LimitRule{
 			DomainRegexp: ".*",
 			Parallelism: camount,
 			// Delay: time.Duration(cinterval) * time.Second,
 		})
-		// c.Async = true
+		//c.Async = true
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
+			fmt.Println("collecting "+ r.URL.String())
 			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
 				r.Abort()
 			}
 			time.Sleep(time.Duration(cinterval) * time.Second)
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
+			if cstopped == true {
+				return
+			}
 			if proxies != nil {
 				rproxy := rand.Intn(len(proxies))
 				c.SetProxy(proxies[rproxy])
@@ -124,22 +135,25 @@ var crawlCmd = &cobra.Command{
 			if !strings.HasSuffix(nextPage, "#") {
 				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
 			}
-			
-			if !cstopped {
-				c.Visit(nextPage)
+			fmt.Println(cstopped)
+			if cstopped == false {
+				c.Visit(nextPage) 
+			} else {
+				return
 			}
 		})
 		fmt.Println(color.CyanString("[i] ") + "beginning crawl...")
 		c.AllowURLRevisit = false
 		signal_chan = make(chan os.Signal)
 		signal.Notify(signal_chan, os.Interrupt, syscall.SIGTERM)
-		c.Visit("https://" + args[0] + "/")
 		go func() {
 			<-signal_chan
 			cstopped = true
+			fmt.Println("eeeee")
 		}()
+		c.Visit("https://" + args[0] + "/")
 		
-		defer func() {
+		func() {
 			var exportq = &survey.Confirm{
 				Message: "export data?",
 			}
@@ -187,11 +201,12 @@ var crawlCmd = &cobra.Command{
 
 func init() {
 	crawlCmd.Flags().IntVarP(&depth, "depth", "d", 4, "recursion depth")
-	crawlCmd.Flags().IntVarP(&cinterval, "interval", "i", 7, "wait time between page visits (in seconds, defaults to 7)")
+	crawlCmd.Flags().IntVarP(&cinterval, "interval", "i", 1, "wait time between page visits (in seconds, defaults to 7)")
 	crawlCmd.Flags().IntVarP(&timeout, "timeout", "t", 3, "page visit timeout (in seconds, defaults to 3)")
 	crawlCmd.Flags().IntVarP(&camount, "crawlers", "c", 1, "amount of crawlers (unrecommended without proxies, defaults to 1)")
 	crawlCmd.Flags().BoolVarP(&ignoreRobots, "robotstxt", "r", false, "ignore robots.txt (makes you an obvious attacker, defaults to false)")
 	crawlCmd.Flags().StringVarP(&proxylist, "proxylist", "p", "", "list of proxies to use")
+	crawlCmd.Flags().BoolVarP(&spiderm, "spider", "s", false, "allow the crawler to follow off-site links")
 	rootCmd.AddCommand(crawlCmd)
 
 	// Here you will define your flags and configuration settings.
