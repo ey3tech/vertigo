@@ -7,7 +7,7 @@
 [![stargazers][stars-shield]][stars-url]
 [![issues][issues-shield]][issues-url]
 [![mit license][license-shield]][license-url]
-[![issues welcome][https://img.shields.io/badge/issues-welcome-green?style=for-the-badge&logo=github]][https://github.com/ey3tech/vertigo/issues]
+[![issues welcome](https://img.shields.io/badge/issues-welcome-green?style=for-the-badge&logo=github)](https://github.com/ey3tech/vertigo/issues)
 
 
 <!-- project logo -->
