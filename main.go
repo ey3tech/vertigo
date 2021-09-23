@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "vertigo/cmd"
+import "github.com/ey3tech/vertigo/cmd"
 
 func main() {
 	cmd.Execute()
