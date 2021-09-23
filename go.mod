@@ -1,4 +1,4 @@
-module vertigo
+module github.com/ey3tech/vertigo
 
 go 1.17
 
