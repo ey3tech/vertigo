@@ -50,6 +50,9 @@ type XMLwebpage struct {
 	From string `xml:"from"`
 }
 
+type XMLResults struct {
+	Pages []XMLwebpage `xml:"results>page"`
+}
 // crawlCmd represents the crawl command
 
 var crawlCmd = &cobra.Command{
@@ -64,6 +67,7 @@ var crawlCmd = &cobra.Command{
 
 		var proxies []string
 		var results []map[string]string
+		var lastpage string
 
 
 		if proxylist != "" {
@@ -97,7 +101,7 @@ var crawlCmd = &cobra.Command{
 		c.SetRequestTimeout(time.Duration(ctimeout) * time.Second)
 		c.IgnoreRobotsTxt = ignoreRobots
 		c.OnRequest(func(r *colly.Request) {
-			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" {
+			if strings.HasSuffix(r.URL.String(), "#") || r.URL.String() == "#" || strings.Split(r.URL.String(), "?")[0] == lastpage {
 				r.Abort()
 			}
 		})
@@ -105,14 +109,15 @@ var crawlCmd = &cobra.Command{
 			if cstopped == true {
 				return
 			}
+			nextPage := strings.Split(e.Request.AbsoluteURL(e.Attr("href")), "?")[0]
+			lastpage = strings.Split(e.Request.URL.String(), "?")[0]
 			if proxies != nil {
 				rproxy := rand.Intn(len(proxies))
 				c.SetProxy(proxies[rproxy])
-				fmt.Println(color.GreenString("[+] ") + "found " + e.Request.URL.String() + " using proxy " + proxies[rproxy])
+				fmt.Println(color.GreenString("[+] ") + "found " + nextPage + " using proxy " + proxies[rproxy])
 			} else {
-				fmt.Println(color.GreenString("[+] ") + "found: " + e.Request.URL.String())
+				fmt.Println(color.GreenString("[+] ") + "found: " + nextPage)
 			}
-			nextPage := e.Request.AbsoluteURL(e.Attr("href"))
 			if strings.HasSuffix(nextPage, "#") != true {
 				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
 			}
@@ -147,38 +152,46 @@ var crawlCmd = &cobra.Command{
 			var exportq = &survey.Confirm{
 				Message: "export data?",
 			}
-			var exportfq = &survey.Input{
-				Message: "export file location?",
-				Suggest: func(toComplete string) []string {
-					files, _ := filepath.Glob(toComplete + "*.json")
-					return files
-				},
-			}
 			export := false
-			exportf := ""
-			format := ""
 			
 			survey.AskOne(exportq, &export)
 			if export {
-				eformat := &survey.Select{
-					Message: "export format to use",
-					Options: []string{"xml", "json"},
+				var qs = []*survey.Question{
+					{
+						Name: "format",
+						Prompt: &survey.Select{Message: "export format to use:", Options: []string{"xml", "json"}},
+					},
+					{
+						Name: "location",
+						Prompt: &survey.Input{
+							Message: "export file location?",
+							Suggest: func(toComplete string) []string {
+								files, _ := filepath.Glob("*" + toComplete + "*")
+								return files
+							},
+						},
+						Validate: survey.Required,
+					},
 				}
-				survey.AskOne(eformat, &format)
-				survey.AskOne(exportfq, &exportf)
-				if format == "xml" {
-					res := []XMLwebpage{}
+				ans := struct{
+					Format string
+					Location string
+				}{}
+				survey.Ask(qs, &ans)
+				var res []XMLwebpage
+				if ans.Format == "xml" {
+					res = []XMLwebpage{}
 					for _, r := range results {
-						res = append(res, XMLwebpage{URL: r["url"], From: r["from"]})
+						res = append(res, XMLwebpage{URL: r["URL"], From: r["From"]})
 					}
 					file, _ := xml.MarshalIndent(&res, "", "  ")
-					ioutil.WriteFile(exportf, file, 0644)
-				} else if format == "json" {
+					ioutil.WriteFile(ans.Location, file, 0644)
+				} else if ans.Format == "json" {
 					file, err := json.MarshalIndent(&results, "", "  ")
 					if err != nil {
 						return errors.New(err.Error())
 					}
-					ioutil.WriteFile(exportf, file, 0644)
+					ioutil.WriteFile(ans.Location, file, 0644)
 				}
 				fmt.Println(color.CyanString("[i] ") + "export complete")
 			}
