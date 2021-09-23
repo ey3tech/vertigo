@@ -1,16 +1,16 @@
 <!--
-*** from https://github.com/othneildrew/Best-README-Template
+*** from https://github.com/othneildrew/best-readme-template
 -->
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+[![contributors][contributors-shield]][contributors-url]
+[![forks][forks-shield]][forks-url]
+[![stargazers][stars-shield]][stars-url]
+[![issues][issues-shield]][issues-url]
+[![mit license][license-shield]][license-url]
 
 
 
-<!-- PROJECT LOGO -->
+<!-- project logo -->
 <br />
 <p align="center">
   <a href="https://github.com/ey3tech/vertigo">
@@ -35,18 +35,12 @@
 
 
 
-<!-- TABLE OF CONTENTS -->
+<!-- table of contents -->
 <details open="open">
   <summary>table of contents</summary>
   <ol>
     <li><a href="#built-with">built with</a></li>
-    <li>
-      <a href="#getting-started">getting started</a>
-      <ul>
-        <li><a href="#prerequisites">prerequisites</a></li>
-        <li><a href="#installation">installation</a></li>
-      </ul>
-    </li>
+    <li><a href="#installation">installation</a></li>
     <li><a href="#usage">usage</a></li>
     <li><a href="#roadmap">roadmap</a></li>
     <li><a href="#contributing">contributing</a></li>
@@ -57,11 +51,11 @@
 
 
 
-<!-- ABOUT THE PROJECT -->
+<!-- about the project -->
 
 ### built with
 
-This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
+this section should list any major frameworks that you built your project using. leave any add-ons/plugins for the acknowledgements section. here are a few examples.
 * [cobra](https://github.com/spf13/cobra)
 * [colly](https://github.com/gocolly/colly)
 * [go-ping](https://github.com/go-ping/ping)
@@ -69,75 +63,72 @@ This section should list any major frameworks that you built your project using.
 
 
 
-<!-- GETTING STARTED -->
-## getting started
+<!-- getting started -->
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+## installation
 
-### prerequisites
+### 1. install go
+#### **linux**
+```sh
+sudo apt install golang-go
+```
+#### **windows**
+install go from [here](https://golang.org/dl/)
 
-This is an example of how to list things you need to use the software and how to install them.
-* go
-  ```sh
-  sudo apt install golang-go
-  ```
+### 2. download with go
 
-### installation
-
-1. download with go
    ```sh
    go get https://github.com/ey3tech/vertigo
    ```
-3. you're all done! 🎉
+#### 3. you're all done! 🎉
 
 
 
-<!-- USAGE EXAMPLES -->
+<!-- usage examples -->
 ## usage
 
 <center><img src="https://user-images.githubusercontent.com/73202594/134030015-d4ca624c-c85e-475c-8d13-10bcaed490ee.png" width=700px></center>
 
-_For more examples, [read da docs](docs/vertigo.md)_
+_for more examples, [read da docs](docs/vertigo.md)_
 
 
 
-<!-- ROADMAP -->
+<!-- roadmap -->
 ## roadmap
 
-See the [open issues](https://github.com/ey3tech/vertigo/issues) for a list of proposed features (and known issues).
+see the [open issues](https://github.com/ey3tech/vertigo/issues) for a list of proposed features (and known issues).
 
 
 
-<!-- CONTRIBUTING -->
+<!-- contributing -->
 ## contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+contributions are what make the open source community such an amazing place to learn, inspire, and create. any contributions you make are **greatly appreciated**.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. fork the project
+2. create your feature branch (`git checkout -b feature/amazingfeature`)
+3. commit your changes (`git commit -m 'add some amazingfeature'`)
+4. push to the branch (`git push origin feature/amazingfeature`)
+5. open a pull request
 
 
 
-<!-- LICENSE -->
+<!-- license -->
 ## license
 
-Distributed under the Apache 2.0 License. See `LICENSE` for more information.
+distributed under the apache 2.0 license. see `license` for more information.
 
-<!-- ACKNOWLEDGEMENTS -->
+<!-- acknowledgements -->
 ## acknowledgements
-* [GitHub Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet)
-* [Img Shields](https://shields.io)
-* [Choose an Open Source License](https://choosealicense.com)
+* [gitmoji](https://gitmoji.dev)
+* [badges](https://shields.io)
+* [choose an open source license](https://choosealicense.com)
 
 
 
 
 
-<!-- MARKDOWN LINKS & IMAGES -->
+<!-- markdown links & images -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/ey3tech/vertigo.svg?style=for-the-badge
 [contributors-url]: https://github.com/ey3tech/vertigo/graphs/contributors
@@ -148,5 +139,5 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 [issues-shield]: https://img.shields.io/github/issues/ey3tech/vertigo.svg?style=for-the-badge
 [issues-url]: https://github.com/ey3tech/vertigo/issues
 [license-shield]: https://img.shields.io/github/license/ey3tech/vertigo.svg?style=for-the-badge
-[license-url]: https://github.com/ey3tech/vertigo//LICENSE.txt
+[license-url]: https://github.com/ey3tech/vertigo//license.txt
 [product-screenshot]: images/screenshot.png

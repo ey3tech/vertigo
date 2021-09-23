@@ -38,7 +38,7 @@ var rootCmd = &cobra.Command{
 | |/ /  __/ /  / /_/ / /_/ / /_/ /
 |___/\___/_/   \__/_/\__, /\____/ 
 		    /____/
-	`) + "\n\nvertigo is is a CLI application for retrieving information about computers.", // http://patorjk.com/software/taag/#p=display&f=Slant&t=vertigo
+	`) + "\n\na speedy hacking program written in go", // http://patorjk.com/software/taag/#p=display&f=Slant&t=vertigo
 
 }
 
