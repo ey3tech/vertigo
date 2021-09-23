@@ -5,7 +5,7 @@
 | | / / _ \/ ___/ __/ / __ '/ __ \
 | |/ /  __/ /  / /_/ / /_/ / /_/ /
 |___/\___/_/   \__/_/\__, /\____/ 
-         		    /____/
+                    /____/
 ```
 vertigo is is a CLI application for retrieving information about computers.
 
