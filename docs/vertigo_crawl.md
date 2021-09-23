@@ -21,7 +21,7 @@ vertigo crawl google.com
   -i, --interval int       wait time between page visits (in seconds, defaults to 7) (default 1)
   -p, --proxylist string   list of proxies to use
   -r, --robotstxt          ignore robots.txt (makes you an obvious attacker, defaults to false)
-  -s, --spider             allow the crawler to follow off-site links
+  -s, --domains            makes the crawler prioritize finding all different domains, hugely boosts performance
   -t, --timeout int        page visit timeout (in seconds, defaults to 3) (default 3)
 ```
 
