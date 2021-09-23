@@ -139,5 +139,5 @@ distributed under the apache 2.0 license. see `license` for more information.
 [issues-shield]: https://img.shields.io/github/issues/ey3tech/vertigo.svg?style=for-the-badge
 [issues-url]: https://github.com/ey3tech/vertigo/issues
 [license-shield]: https://img.shields.io/github/license/ey3tech/vertigo.svg?style=for-the-badge
-[license-url]: https://github.com/ey3tech/vertigo//license.txt
+[license-url]: https://github.com/ey3tech/vertigo/LICENSE
 [product-screenshot]: images/screenshot.png
