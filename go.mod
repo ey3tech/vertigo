@@ -10,6 +10,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.2
 	github.com/fatih/color v1.12.0
 	github.com/gocolly/colly v1.2.0
+	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )
 
