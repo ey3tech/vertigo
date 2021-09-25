@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -68,28 +67,15 @@ var crawlCmd = &cobra.Command{
 		var proxies []string
 		var results []map[string]string
 		var lastpage string
-
+		var err error
 
 		if proxylist != "" {
 
 			// make sure file exists
-			info, err := os.Stat(proxylist)
-			if os.IsNotExist(err) {
-				return errors.New(color.RedString("proxy list file does not exist"))
-			}
-			if info.IsDir() {
-				return errors.New(color.RedString(proxylist + " is a directory"))
-			}
-
-			// read file
-			proxystr, err := os.ReadFile(proxylist)
-			if proxystr == nil || string(proxystr) == "" {
-				return errors.New(color.RedString("proxy list file is empty"))
-			}
+			proxies, err = readFile(proxylist)
 			if err != nil {
-				return errors.New(color.RedString(err.Error()))
+				return err
 			}
-			proxies = strings.Split(string(proxystr), "\n") // a list of proxies
 		}
 		var path string
 		url := strings.SplitN(args[0], "/", 1)
@@ -112,9 +98,9 @@ var crawlCmd = &cobra.Command{
 			nextPage := strings.Split(e.Request.AbsoluteURL(e.Attr("href")), "?")[0]
 			lastpage = strings.Split(e.Request.URL.String(), "?")[0]
 			if proxies != nil {
-				rproxy := rand.Intn(len(proxies))
-				c.SetProxy(proxies[rproxy])
-				fmt.Println(color.GreenString("[+] ") + "found " + nextPage + " using proxy " + proxies[rproxy])
+				rproxy := random(proxies)
+				c.SetProxy(rproxy)
+				fmt.Println(color.GreenString("[+] ") + "found " + nextPage + " using proxy " + rproxy)
 			} else {
 				fmt.Println(color.GreenString("[+] ") + "found: " + nextPage)
 			}
@@ -143,7 +129,7 @@ var crawlCmd = &cobra.Command{
 			<-signal_chan
 			cstopped = true
 		}()
-		err := c.Visit("http://" + hname + "/" + path)
+		err = c.Visit("http://" + hname + "/" + path)
 		if err != nil {
 			return err
 		}

