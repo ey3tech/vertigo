@@ -45,13 +45,14 @@ var cstopped bool
 var domainfind bool
 
 type XMLwebpage struct {
-	URL string `xml:"url"`
+	URL  string `xml:"url"`
 	From string `xml:"from"`
 }
 
 type XMLResults struct {
 	Pages []XMLwebpage `xml:"results>page"`
 }
+
 // crawlCmd represents the crawl command
 
 var crawlCmd = &cobra.Command{
@@ -92,7 +93,7 @@ var crawlCmd = &cobra.Command{
 			}
 		})
 		c.OnHTML("a", func(e *colly.HTMLElement) {
-			if cstopped == true {
+			if cstopped {
 				return
 			}
 			nextPage := strings.Split(e.Request.AbsoluteURL(e.Attr("href")), "?")[0]
@@ -104,12 +105,12 @@ var crawlCmd = &cobra.Command{
 			} else {
 				fmt.Println(color.GreenString("[+] ") + "found: " + nextPage)
 			}
-			if strings.HasSuffix(nextPage, "#") != true {
+			if !strings.HasSuffix(nextPage, "#") {
 				results = append(results, map[string]string{"URL": nextPage, "From": e.Request.URL.String()})
 			}
 			time.Sleep(time.Duration(cinterval) * time.Second)
-			if cstopped == false {
-				c.Visit(nextPage) 
+			if !cstopped {
+				c.Visit(nextPage)
 			} else {
 				return
 			}
@@ -117,10 +118,9 @@ var crawlCmd = &cobra.Command{
 		fmt.Println(color.CyanString("[i] ") + "beginning crawl...")
 
 		c.AllowURLRevisit = false
-		if domainfind == true {
+		if domainfind {
 			c.OnResponse(func(r *colly.Response) {
 				c.DisallowedDomains = append(c.DisallowedDomains, r.Request.URL.Hostname())
-				return
 			})
 		}
 		signal_chan = make(chan os.Signal)
@@ -133,18 +133,18 @@ var crawlCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		
+
 		err = func() error {
 			var exportq = &survey.Confirm{
 				Message: "export data?",
 			}
 			export := false
-			
+
 			survey.AskOne(exportq, &export)
 			if export {
 				var qs = []*survey.Question{
 					{
-						Name: "format",
+						Name:   "format",
 						Prompt: &survey.Select{Message: "export format to use:", Options: []string{"xml", "json"}},
 					},
 					{
@@ -159,8 +159,8 @@ var crawlCmd = &cobra.Command{
 						Validate: survey.Required,
 					},
 				}
-				ans := struct{
-					Format string
+				ans := struct {
+					Format   string
 					Location string
 				}{}
 				survey.Ask(qs, &ans)
@@ -183,7 +183,7 @@ var crawlCmd = &cobra.Command{
 			}
 			fmt.Println(color.CyanString("[i] ") + "crawl complete")
 			return nil
-			}()
+		}()
 		return err
 	},
 }

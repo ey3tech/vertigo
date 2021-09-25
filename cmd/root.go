@@ -18,12 +18,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"math/rand"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -104,7 +104,7 @@ func readFile(filename string) ([]string, error) {
 		return nil, errors.New(color.RedString("file does not exist"))
 	}
 	if info.IsDir() {
-		return nil, errors.New(color.RedString(filename+" is a directory"))
+		return nil, errors.New(color.RedString(filename + " is a directory"))
 	}
 
 	// read file
