@@ -25,7 +25,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-ping/ping"
-	// "github.com/gocolly/colly"
+	"github.com/gocolly/colly"
 	"github.com/jlaffaye/ftp"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -39,6 +39,8 @@ type response struct {
 	Username string
 	ListPath string
 	Interval int
+	UsernameField string
+	PasswordField string
 }
 
 var hn []string
@@ -63,6 +65,9 @@ var bruteCmd = &cobra.Command{
 		}
 		if answers.Service == "" {
 			return errors.New(color.RedString("need the service to brute force"))
+		} 
+		if answers.PasswordField == "" && answers.Service == "http" {
+			return errors.New(color.RedString("need at the password field, declare it using the id with --pfield"))
 		}
 		answers.Hostname = args[0]
 		return nil
@@ -127,8 +132,9 @@ var bruteCmd = &cobra.Command{
 				time.Sleep(time.Duration(answers.Interval) * time.Millisecond)
 			}
 		case "http":
-			// client := colly.NewCollector()
-			// client.Post()
+			client := colly.NewCollector()
+			_ = client
+			//! client.Post(answers.Hostname, ) // help me
 		case "ftp":
 			client, err := ftp.Dial(answers.Hostname+":"+fmt.Sprint(answers.Port), ftp.DialWithTimeout(time.Duration(5)*time.Second))
 			if err != nil {
@@ -163,9 +169,13 @@ func init() {
 	bruteCmd.Flags().IntVarP(&answers.Port, "port", "p", 0, "the port the service is running on")
 	bruteCmd.Flags().StringVarP(&answers.ListPath, "passwords", "P", "", "list of passwords to try (required)")
 	bruteCmd.Flags().IntVarP(&answers.Interval, "interval", "i", 750, "interval between ssh attempts")
+	bruteCmd.Flags().StringVar(&answers.UsernameField, "ufield", "", "the id of the field attribute for the username (required for http bruteforce)")
+	bruteCmd.Flags().StringVar(&answers.PasswordField, "pfield", "", "the id of the field attribute for the password (required for http bruteforce)")
 	bruteCmd.Flags().Lookup("port").Usage = "the port to brute force (required)"
 	bruteCmd.Flags().Lookup("username").Usage = "the username of the user to attempt to login to"
 	bruteCmd.Flags().Lookup("service").Usage = "the service to brute force, accepted values are ftp, http, and ssh"
+	bruteCmd.Flags().Lookup("usernamefield").Usage = "the name of the field for the username (required for http bruteforce)"
+	bruteCmd.Flags().Lookup("passwordfield").Usage = "the name of the field for the password (required for http bruteforce)"
 
 	bruteCmd.Hidden = true //* wip
 	// Here you will define your flags and configuration settings.
