@@ -78,7 +78,7 @@ install go from [here](https://golang.org/dl/)
 ### 2. download with go
 
    ```sh
-   go get https://github.com/ey3tech/vertigo
+   go get github.com/ey3tech/vertigo
    ```
 #### 3. you're all done! 🎉
 
